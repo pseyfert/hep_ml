@@ -398,6 +398,8 @@ class uBoostClassifier(BaseEstimator, ClassifierMixin):
                  n_neighbors=50,
                  efficiency_steps=20,
                  n_estimators=40,
+                 learning_rate=1.,
+                 uniforming_rate=1.,
                  base_estimator=None,
                  subsample=1.0,
                  algorithm="SAMME",
@@ -427,6 +429,16 @@ class uBoostClassifier(BaseEstimator, ClassifierMixin):
         :param n_estimators: integer, optional (default=50)
             The maximum number of estimators at which boosting is terminated.
             In case of perfect fit, the learning procedure is stopped early.
+
+        :param learning_rate: float, optional (default=1.)
+            Learning rate shrinks the contribution of each classifier by
+            ``learning_rate``. There is a trade-off between ``learning_rate``
+            and ``n_estimators``.
+
+        :param uniforming_rate: float, optional (default=1.)
+            how much do we take into account the uniformity of signal,
+            there is a trade-off between uniforming_rate and the speed of
+            uniforming, zero value corresponds to plain AdaBoost
 
         :param efficiency_steps: integer, optional (default=20),
             How many uBoostBDTs should be trained
@@ -458,6 +470,8 @@ class uBoostClassifier(BaseEstimator, ClassifierMixin):
         self.efficiency_steps = efficiency_steps
         self.random_state = random_state
         self.n_estimators = n_estimators
+        self.learning_rate = learning_rate
+        self.uniforming_rate = uniforming_rate
         self.base_estimator = base_estimator
         self.subsample = subsample
         self.train_features = train_features
@@ -503,12 +517,17 @@ class uBoostClassifier(BaseEstimator, ClassifierMixin):
             classifier = uBoostBDT(
                 uniform_features=self.uniform_features,
                 uniform_label=self.uniform_label,
-                train_features=None,
-                target_efficiency=efficiency, n_neighbors=self.knn,
-                n_estimators=self.n_estimators,
+                target_efficiency=efficiency,
+                n_neighbors=self.knn,
+                subsample=self.subsample,
                 base_estimator=self.base_estimator,
-                random_state=self.random_state, subsample=self.subsample,
-                smoothing=self.smoothing, algorithm=self.algorithm)
+                n_estimators=self.n_estimators,
+                learning_rate=self.learning_rate,
+                uniforming_rate=self.uniforming_rate,
+                train_features=None,
+                smoothing=self.smoothing,
+                random_state=self.random_state,
+                algorithm=self.algorithm)
             self.classifiers.append(classifier)
 
         self.classifiers = map_on_cluster('threads-{}'.format(self.n_threads),
